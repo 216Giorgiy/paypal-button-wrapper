@@ -1,3 +1,12 @@
+if ("undefined" === typeof paypal || "undefined" === typeof paypal.button || "undefined" === typeof paypal.button.create) {
+    var err = "`paypal` global object not found or incompatible. Make sure the https://www.paypalobjects.com/api/button.js is loaded.";
+    if (console) {
+        console.error(err);
+    } else {
+        throw new err;
+    }
+}
+
 /**
  * Wrapper class that allows to create PayPal buttons dynamically using the JavaScriptButtons
  * 
@@ -38,11 +47,18 @@ PayPalButton.prototype.sanitizeValue = function(val, array, default_val) {
  * 
  * @return Returns the normalized object
  */
-PayPalButton.prototype.normalizeData = function(label, show_icon, locale, disabled) {
+PayPalButton.prototype.normalizeData = function(id, type, label, show_icon, locale, disabled) {
+    // hack: \x7F introduces an invisible character that indent downwards the caption a little bit
+    if (!(label.length && label.replace(PayPalButton.prototype.DEFAULT_LABEL, "").length)) {
+        label = "\x7F" + label;
+    }
+
     return {
         lc : locale,
-        label : (label.length ? label : "\x7F") + (show_icon ? PayPalButton.prototype.DEFAULT_LABEL : ""),
+        label : label + (show_icon ? PayPalButton.prototype.DEFAULT_LABEL : ""),
         disabled : disabled ? "true" : "false",
+        button_type : type,
+        id : id
     };
 };
 
@@ -91,12 +107,13 @@ PayPalButton.prototype.factory = function(data, config, parent_selector) {
                 PayPalButton.prototype.BOOL[0]);
     }
 
-    // fixed value
+    // fixed value (however,if `checkout` is used then the button will be a submit form-like)
     config.type = PayPalButton.prototype.sanitizeValue(config.type, [ "button" ], "button");
+    data.button_type = config.type;
 
     if (config.label) {
-        config.label = PayPalButton.prototype.sanitizeValue(config.label, PayPalButton.prototype.LABELS,
-                PayPalButton.prototype.LABELS[0]);
+        config.label = PayPalButton.prototype.sanitizeValue(config.label, PayPalButton.prototype.TYPES,
+                PayPalButton.prototype.TYPES[0]);
     }
 
     if (config.size) {
@@ -114,6 +131,7 @@ PayPalButton.prototype.factory = function(data, config, parent_selector) {
                 PayPalButton.prototype.DEFAULT_STYLE);
     }
 
+    // see function factory (https://www.paypalobjects.com/api/button.js)
     return paypal.button.create(true, data, config, document.querySelector(parent_selector));
 
 };
@@ -123,6 +141,8 @@ PayPalButton.prototype.factory = function(data, config, parent_selector) {
  * 
  * @param parent_selector
  *            A valid CSS selector. When specified append the resulted button to that parent element.
+ * @param id
+ *            The button Id attribute
  * @param size
  *            The predefined size of the button ("tiny", "small", "medium", "large")
  * @param shape
@@ -143,15 +163,16 @@ PayPalButton.prototype.factory = function(data, config, parent_selector) {
  *            One of the predefined PayPal buttons type ("checkout", "credit"). Default "checkout".
  * @return Returns the generated PayPal button object
  */
-PayPalButton.prototype.createCheckoutButton = function(parent_selector, size, shape, color, label, show_icon, tagline,
+PayPalButton.prototype.createCheckoutButton = function(parent_selector, id, size, shape, color, label, show_icon, tagline,
         locale, disabled, type) {
-    var data = PayPalButton.prototype.normalizeData(label, show_icon, locale, disabled);
+    var data = PayPalButton.prototype.normalizeData(id, PayPalButton.prototype.DEFAULT_BUTTON_TYPE, label, show_icon, locale,
+            disabled);
     data.color = color;
     data.tagline = tagline ? "true" : "false";
 
     var config = PayPalButton.prototype.normalizeConfig(size, shape);
-    config.label = PayPalButton.prototype.sanitizeValue(type, PayPalButton.prototype.LABELS,
-            PayPalButton.prototype.DEFAULT_LABEL);
+    config.label = PayPalButton.prototype.sanitizeValue(type, PayPalButton.prototype.TYPES,
+            PayPalButton.prototype.DEFAULT_TYPE);
 
     return PayPalButton.prototype.factory(data, config, parent_selector);
 };
@@ -161,6 +182,8 @@ PayPalButton.prototype.createCheckoutButton = function(parent_selector, size, sh
  * 
  * @param parent_selector
  *            A valid CSS selector. When specified append the resulted button to that parent element.
+ * @param id
+ *            The button Id attribute
  * @param size
  *            The predefined size of the button ("tiny", "small", "medium", "large")
  * @param shape
@@ -177,10 +200,10 @@ PayPalButton.prototype.createCheckoutButton = function(parent_selector, size, sh
  *            When true the button is generated with disabled style
  * @return Returns the generated PayPal button object
  */
-PayPalButton.prototype.createCreditButton = function(parent_selector, size, shape, label, show_icon, tagline, locale,
+PayPalButton.prototype.createCreditButton = function(parent_selector, id, size, shape, label, show_icon, tagline, locale,
         disabled) {
-    return PayPalButton.prototype.createCheckoutButton(parent_selector, size, shape, "", label, show_icon, tagline, locale,
-            disabled, PayPalButton.prototype.LABELS[1]);
+    return PayPalButton.prototype.createCheckoutButton(parent_selector, id, size, shape, "", label, show_icon, tagline,
+            locale, disabled, PayPalButton.prototype.TYPES[1]);
 };
 
 /**
@@ -188,6 +211,8 @@ PayPalButton.prototype.createCreditButton = function(parent_selector, size, shap
  * 
  * @param parent_selector
  *            A valid CSS selector. When specified append the resulted button to that parent element.
+ * @param id
+ *            The button Id attribute
  * @param size
  *            The predefined size of the button ("tiny", "small", "medium", "large")
  * @param shape
@@ -204,8 +229,10 @@ PayPalButton.prototype.createCreditButton = function(parent_selector, size, shap
  *            When true the button is generated with disabled style
  * @return Returns the generated PayPal button object
  */
-PayPalButton.prototype.createStyleButton = function(parent_selector, size, shape, style, label, show_icon, locale, disabled) {
-    var data = PayPalButton.prototype.normalizeData(label, show_icon, locale, disabled);
+PayPalButton.prototype.createStyleButton = function(parent_selector, id, size, shape, style, label, show_icon, locale,
+        disabled) {
+    var data = PayPalButton.prototype.normalizeData(id, PayPalButton.prototype.DEFAULT_BUTTON_TYPE, label, show_icon, locale,
+            disabled);
 
     var config = PayPalButton.prototype.normalizeConfig(size, shape);
     config.style = style;
@@ -215,10 +242,11 @@ PayPalButton.prototype.createStyleButton = function(parent_selector, size, shape
 
 PayPalButton.prototype.COLORS = [ "blue", "silver", "gold" ];
 PayPalButton.prototype.BOOL = [ "false", "true" ];
-PayPalButton.prototype.LABELS = [ "checkout", "credit" ];
+PayPalButton.prototype.TYPES = [ "checkout", "credit" ];
 PayPalButton.prototype.SIZES = [ "tiny", "small", "medium", "large" ];
 PayPalButton.prototype.SHAPES = [ "pill", "rect" ];
 PayPalButton.prototype.STYLES = [ "primary", "secondary", "tertiary", "quaternary", "checkout", "credit" ];
+PayPalButton.prototype.BUTTON_TYPES = [ "button", "submit" ];
 
 PayPalButton.prototype.DEFAULT_LOCALE = "en_US";
 PayPalButton.prototype.DEFAULT_COLOR = PayPalButton.prototype.COLORS[0];
@@ -226,3 +254,5 @@ PayPalButton.prototype.DEFAULT_LABEL = "{wordmark}";
 PayPalButton.prototype.DEFAULT_SIZE = PayPalButton.prototype.SIZES[2];
 PayPalButton.prototype.DEFAULT_STYLE = "primary";
 PayPalButton.prototype.DEFAULT_SHAPE = PayPalButton.prototype.SHAPES[1];
+PayPalButton.prototype.DEFAULT_TYPE = PayPalButton.prototype.TYPES[0];
+PayPalButton.prototype.DEFAULT_BUTTON_TYPE = PayPalButton.prototype.BUTTON_TYPES[0];
