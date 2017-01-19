@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>paypal-button-wrapper demo</title>
+<script src="https://www.paypalobjects.com/api/button.js"></script>
+<script src="../src/PayPalButton.js"></script>
+<style>
+body {
+	text-align: left;
+	background-color: ivory;
+	font-family: monospace;
+}
+
+.hint {
+	z-index: 9999; 
+	display : none;
+	top: 0;
+	left: 0;
+	position: fixed;
+	opacity: 0.75;
+	color: #fff;
+	background-color: #000;
+	padding: 10px;
+	box-shadow: 0 0 20px #000;
+}
+
+.hint th {
+	font-weight: bold;
+}
+
+.hint tr:first-child td:last-child {
+	color: fuchsia;
+}
+
+div {
+	display: inline;
+}
+</style>
+</head>
+<body>
+	<div id="button-hint" class="hint"></div>
+	<h3>These are quite all possible combinations generated programatically. Obviously not all of them make sense but...</h3>
+	<fieldset>
+		<legend>Other options: </legend>
+		<table>
+			<tr>
+				<th><label for="button-locale">Button caption locale: </label></th>
+				<td><input id="button-locale" type="text" placeholder="eg. en_US,sv_SE,ja_JP" size="30" value="sv_SE"></td>
+			</tr>
+			<tr>
+				<th><label for="button-caption">Button's caption: </label></th>
+				<td><input id="button-caption" type="text" placeholder="enter button's caption" size="30" value="Buy"></td>
+			</tr>
+			<tr>
+				<td colspan="2"><input type="button" value="Generate"
+					onclick="run(document.getElementById('button-caption').value,document.getElementById('button-locale').value);"></td>
+			</tr>
+		</table>
+	</fieldset>
+	<div id="button-wrapper"></div>
+	<script>
+        // bind a hint to an button element (provides info about how the button was created)
+        function createHint(id) {
+            var div = document.createElement("div");
+            div.setAttribute("id", "hint_" + id);
+            div.setAttribute("class", "hint");
+            div.innerHTML = "<p>The button was create with:</p><table>" + content + "</table>";
+            document.body.appendChild(div);
+        }
+
+        function hintOnMouseEnter(event) {
+            var hint_div = document.getElementById("button-hint");
+
+            if (hint_div) {
+                var tooltip = "";
+                for (prop in event.currentTarget.dataset) {
+                    if (event.currentTarget.dataset.hasOwnProperty(prop)) {
+                        tooltip += "<tr><th>" + prop[0].toUpperCase() + prop.substr(1) + "</th><td> : <td><td>"
+                                + event.currentTarget.dataset[prop] + "</td></tr>";
+                    }
+                }
+                hint_div.innerHTML = "<table>" + tooltip + "</table>";
+                hint_div.style.display = "block";
+            }
+        }
+        function hintOnMouseLeave(event) {
+            var hint_div = document.getElementById("button-hint");
+
+            if (hint_div) {
+                hint_div.style.display = "none";
+            }
+        }
+
+        function bindHint(id, data) {
+            var content = "";
+            var el = document.getElementById(id);
+            try {
+                var json = JSON.parse(data);
+                for (prop in json) {
+                    if (json.hasOwnProperty(prop)) {
+                        el.dataset[prop] = json[prop];
+                    }
+                }
+
+                el.addEventListener("mouseenter", hintOnMouseEnter);
+                el.addEventListener("mouseleave", hintOnMouseLeave);
+            } catch (e) {
+            }
+        }
+
+        // generates the buttons
+        function run(caption, locale) {
+            locale = locale || "sv_SE";
+            caption = caption || "Caption";
+
+            var labels = [ "", caption ], booleans = [ false, true ];
+            var parent = document.getElementById("button-wrapper");
+            var buttons = {};
+            var btn;
+
+            var pushBtn = function(btn, data) {
+                var key = btn.el.innerHTML;
+                if (!buttons.hasOwnProperty(key)) {
+                    buttons[key] = JSON.stringify(data);
+                }
+            };
+
+            document.body.style.cursor = "progress";
+
+            // we iterate all possible values and generate buttons; we store each unique html representation into an array
+            PayPalButton.prototype.SIZES.forEach(function(size) {
+                PayPalButton.prototype.SHAPES.forEach(function(shape) {
+                    PayPalButton.prototype.COLORS.forEach(function(color) {
+                        labels.forEach(function(label) {
+                            booleans.forEach(function(show_icon) {
+                                booleans.forEach(function(tagline) {
+                                    PayPalButton.prototype.LABELS.forEach(function(type) {
+                                        //create button by type
+                                        btn = PayPalButton.prototype.createCheckoutButton(false, size, shape, color, label,
+                                                show_icon, tagline, locale, false);
+                                        pushBtn(btn, {
+                                            "function" : "createCheckoutButton",
+                                            size : size,
+                                            shape : shape,
+                                            color : color,
+                                            label : label,
+                                            logo : show_icon,
+                                            tagline : tagline,
+                                            type : type
+                                        });
+                                    });
+                                    // create button by style
+                                    PayPalButton.prototype.STYLES.forEach(function(style) {
+                                        btn = PayPalButton.prototype.createStyleButton(false, size, shape, style, label,
+                                                show_icon, locale, false);
+                                        pushBtn(btn, {
+                                            "function" : "createStyleButton",
+                                            size : size,
+                                            shape : shape,
+                                            style : style,
+                                            label : label,
+                                            logo : show_icon,
+                                            locale : locale
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+
+            document.body.style.cursor = "default";
+
+            var s = "";
+            var i = 1;
+            var id;
+            var hints = {};
+
+            // render the buttons from the array HTML contents and store their hint
+            for (content in buttons) {
+                if (buttons.hasOwnProperty(content)) {
+                    id = "paypal_" + i;
+                    s += "<div id=\""+id+"\">" + content + "</div>";
+                    hints[id] = buttons[content];
+                    i += 1;
+                }
+            }
+
+            // render the new buttons
+            parent.innerHTML = s;
+
+            // create the hint divs and attach the tooltip event
+            for (id in hints) {
+                if (hints.hasOwnProperty(id)) {
+                    bindHint(id, hints[id]);
+                }
+            }
+        }
+
+        run(document.getElementById("button-caption").value, document.getElementById("button-locale").value);
+    </script>
+</body>
+</html>
