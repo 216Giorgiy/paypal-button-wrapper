@@ -19,7 +19,7 @@
 		"destination": "jsdoc",
 		"recurse": true,
 		"readme": "README.md",
-		"template": "/home/eugen/node_modules/minami"
+		"template": ""
 	},
 	"templates": {
 		"cleverLinks": true,
