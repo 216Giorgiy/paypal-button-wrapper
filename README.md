@@ -33,6 +33,7 @@ The [JavaScriptButtons](https://github.com/paypal/JavaScriptButtons) library (an
 The JavaScript source files are annotated according to JSDoc specification and thus the source documentation can be produced on the fly by using the [JSDoc](http://usejsdoc.org) tool.
 
 In order to generate the JSDoc documentation you should follow the steps below. In case you want to use the JSDoc default template skip the step (1) below.
+
 1. install your preferred JSDoc [template](http://bfy.tw/ABvL) (eg. `npm install minami`)
   - make sure you update the `opts.template` property with the path to the installed JSDoc template in project's `conf.json` file
 2. run the following command at the terminal: `jsdoc -c path-to-conf.json`  
