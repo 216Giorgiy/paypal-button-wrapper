@@ -29,6 +29,9 @@ See the `createCheckoutButton` function.
 ### Note
 The [JavaScriptButtons](https://github.com/paypal/JavaScriptButtons) library (and why not this wrapper) may be used even to generate generic buttons that has nothing to do with PayPal. Just use a custom caption, don't show any logo and that's it!
 
+## Demo
+
+If you want to test all possible ways a PayPal button can be created then please check out the [PseudoShop](http://sandbox.mynixworld.info/pseudoshop/public_html/index.php#extra_options) demo application. This application is not especially created for this button only, however it may be used for it. Make sure you choose `PayPal button` option then click the `Show advanced option` toggle. A `PayPal button options` fieldset will allow you to set whatever properties oyu need to create a fully customized PayPal button on the fly (make sure you apply the changes by clicking the `Apply changes` button). 
 ## Documentation
 The JavaScript source files are annotated according to JSDoc specification and thus the source documentation can be produced on the fly by using the [JSDoc](http://usejsdoc.org) tool.
 
